@@ -2,6 +2,9 @@ rm(list=ls())
 
 library(tidyverse)
 library(rvest)
+library(tm)
+library(devtools)
+library(BRRR)
 
 # Create vector of title
 
@@ -27,14 +30,29 @@ for (i in 1:length(title)) {
   webpage[[i]] <- read_html(url[[i]])
   song_lyrics[[i]]  <- html_nodes(webpage[[i]] ,'p , .header_with_cover_art-primary_info-title')
   lyric_data[[i]] <- html_text(song_lyrics[[i]])
-  
 }
+skrrrahh("bigshaq") # Big Shaq tells you when the loop is over.
 
 Song_names <- sapply(lyric_data, "[[", 1)
 Lyrics <- sapply(lyric_data, "[[", 2)
 
-Trynityville <- data.frame(Song = Song_names, lyrics = Lyrics)
+Trinityville <- data.frame(Song = Song_names, lyrics = Lyrics)
+
+
+##Cleaning the lyrics
+# As.Character
+Trinityville$lyrics <- as.character(Trinityville$lyrics)
+# Remove some words, name of artist etc... 
+# Keep in mind to think about the featuring song to improve the analysis
+Trinityville$lyrics <-gsub("Intro|Couplet 2|Couplet 1|Pont|Outro|Laylow|Jok'Air|Couplet 3|Couplet unique|Alpha Wann|Lomepal|Pré-refrain|Wit.|S.Pri Noir","", Trinityville$lyrics)
+# Remove special characters
+Trinityville$lyrics <-gsub("[^[:alnum:]]"," ", Trinityville$lyrics)
+# Remove words with 1 or 2 characters
+Trinityville$lyrics <-gsub(" *\\b[[:alpha:]]{1,2}\\b *"," ", Trinityville$lyrics)
 
 
 
-
+# Analysis of the number of word by title
+corpus = VCorpus(VectorSource(Trinityville$lyrics))
+tdm = as.matrix(TermDocumentMatrix(corpus, control = list(wordLengths = c(1, Inf))))
+tdm
