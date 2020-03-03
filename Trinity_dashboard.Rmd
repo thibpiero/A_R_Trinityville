@@ -1,0 +1,96 @@
+---
+title: "Trinity"
+output: 
+  flexdashboard::flex_dashboard:
+    runtime: shiny
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+
+library(tidyverse)
+library(rvest)
+library(tm)
+library(devtools)
+library(BRRR)
+library(tidytext)
+library(syuzhet)
+library(wordcloud)
+library(wordcloud2)
+library(flexdashboard)
+library(shiny)
+library(plotly)
+
+```
+
+```{r get the lyrics, include =FALSE}
+Trinityville <- read_csv("Lyrics.csv", col_types = cols(X1 = col_skip()))
+
+##Cleaning the lyrics
+# As.Character
+Trinityville$lyrics <- as.character(Trinityville$lyrics)
+# Remove some words, name of artist etc... 
+# Keep in mind to think about the featuring song to improve the analysis
+Trinityville$lyrics <-gsub("Intro|Couplet 2|Refrain|Couplet 1|Pont|Outro|Laylow|Jok'Air|Couplet 3|Couplet unique|Alpha Wann|Lomepal|Pré-refrain|Wit.|S.Pri Noir","", Trinityville$lyrics)
+# Remove special characters
+Trinityville$lyrics <-gsub("[^[:alnum:]]"," ", Trinityville$lyrics)
+# Remove words with 1,2,3 or 4 characters
+Trinityville$lyrics <-gsub(" *\\b[[:alpha:]]{1,3}\\b *"," ", Trinityville$lyrics)
+
+# Remove some indesirable word 
+Trinityville$lyrics <-gsub("dans| suis|tout |pour|mais|comme|quand|plus|faire |fait|sais | même |vais | veut| veux| avec| vaut | étais
+                           |leur | mets | quoi| parce ","", Trinityville$lyrics)
+# Remove number 
+Trinityville$lyrics <- gsub('[[:digit:]]+', '', Trinityville$lyrics)
+
+
+# Analysis of the number of word by title
+
+corpus = VCorpus(VectorSource(Trinityville$lyrics))
+tdm = as.matrix(TermDocumentMatrix(corpus, control = list(wordLengths = c(1, Inf))))
+Word_by_title <- as.data.frame(tdm)
+
+colnames(Word_by_title) <- Trinityville$Song
+Word_by_title$word <- row.names(Word_by_title)
+
+# Analysis of the number of word in the entire album
+
+tdm.m = as.matrix(TermDocumentMatrix(corpus, control = list(wordLengths = c(1, Inf))))
+term.freq <-rowSums(tdm.m)
+Word_trinity <-data.frame(word=names(term.freq),
+                     frequency=term.freq)
+Word_trinity <-Word_trinity[order(Word_trinity[,2], decreasing=T),]; Word_trinity[1:50,]
+Word_trinity$word <-factor(Word_trinity$word,
+                      levels=unique(as.character(Word_trinity$word)))
+
+```
+
+
+
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+Welcome to the analysis of trinityville an album by Laylow.
+
+```{r}
+selectInput("Trinity", label = "Choose the lyrics",
+            choices = Trinityville$Song, selected = "Initialisation")
+
+
+```
+
+Column
+-----------------------------------------------------------------------
+
+### Word-cloud
+
+```{r}
+renderWordcloud2({
+  
+  essai <- Word_by_title[c("word", as.character(input$Trinity) )]
+  wordcloud2(data=essai, size = 0.7, shape = 'diamond')
+
+})
+```
+

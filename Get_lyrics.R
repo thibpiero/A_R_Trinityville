@@ -52,6 +52,7 @@ Producers <- sapply(lyric_data, "[[", 2)
 
 Trinityville <- data.frame(Song = Song_names, lyrics = Lyrics)
 
+#write.csv(Trinityville, "/Users/francois/Desktop/RTHIB/A_R_Trinityville/Lyrics.csv")
 
 ##Cleaning the lyrics
 # As.Character
@@ -71,13 +72,15 @@ Trinityville$lyrics <-gsub("dans| suis|tout |pour|mais|comme|quand|plus|faire |f
 Trinityville$lyrics <- gsub('[[:digit:]]+', '', Trinityville$lyrics)
 
 
+
 # Analysis of the number of word by title
 
 corpus = VCorpus(VectorSource(Trinityville$lyrics))
 tdm = as.matrix(TermDocumentMatrix(corpus, control = list(wordLengths = c(1, Inf))))
 Word_by_title <- as.data.frame(tdm)
+Word_by_title$word <- row.names(Word_by_title)
 
-colnames(Word_by_title) <- title
+colnames(Word_by_title) <- Trinityville$Song
 # Analysis of the number of word in the entire album
 
 tdm.m = as.matrix(TermDocumentMatrix(corpus, control = list(wordLengths = c(1, Inf))))
@@ -87,6 +90,9 @@ Word_trinity <-data.frame(word=names(term.freq),
 Word_trinity <-Word_trinity[order(Word_trinity[,2], decreasing=T),]; Word_trinity[1:50,]
 Word_trinity$word <-factor(Word_trinity$word,
                       levels=unique(as.character(Word_trinity$word)))
+
+
+Word_by_title[c("Initialisation", )]
 
 
 
@@ -102,3 +108,8 @@ wordcloud2(Word_trinity, size = 0.5, minRotation = -pi/2, maxRotation = -pi/2)
 
 
 # Word cloud by title
+
+
+wordcloud(words = Word_by_title[,"word"], freq = Word_by_title[,"Initialisation"], min.freq = 1,           max.words=200, random.order=FALSE, rot.per=0.35,            colors=brewer.pal(8, "Dark2"))
+
+
