@@ -13,6 +13,7 @@ library(rvest)
 library(tm)
 library(devtools)
 library(BRRR)
+library(rfeel)
 library(tidytext)
 library(syuzhet)
 library(wordcloud)
@@ -20,6 +21,7 @@ library(wordcloud2)
 library(flexdashboard)
 library(shiny)
 library(plotly)
+library(rlang)
 
 ```
 
@@ -63,6 +65,14 @@ Word_trinity <-Word_trinity[order(Word_trinity[,2], decreasing=T),]; Word_trinit
 Word_trinity$word <-factor(Word_trinity$word,
                       levels=unique(as.character(Word_trinity$word)))
 
+score <- rfeel::rfeel("score")
+polarity <- rfeel::rfeel("polarity")
+
+
+
+Word_by_title <- Word_by_title %>% left_join(polarity)
+Word_by_title <- Word_by_title %>% left_join(score)
+
 ```
 
 
@@ -73,24 +83,61 @@ Column {.sidebar}
 
 Welcome to the analysis of trinityville an album by Laylow.
 
-```{r}
+```{r }  
 selectInput("Trinity", label = "Choose the lyrics",
             choices = Trinityville$Song, selected = "Initialisation")
 
 
 ```
 
-Column
+Row
 -----------------------------------------------------------------------
 
 ### Word-cloud
 
-```{r}
+```{r }
 renderWordcloud2({
   
-  essai <- Word_by_title[c("word", as.character(input$Trinity) )]
-  wordcloud2(data=essai, size = 0.7, shape = 'diamond')
+  Trinity_cloud <- Word_by_title[c("word", as.character(input$Trinity) )]
+  wordcloud2(data=Trinity_cloud, size = 0.7, shape = 'diamond')
 
+})
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+### Polarity
+
+```{r}
+renderPlot({
+trinity_polar <- Word_by_title[c( as.character(input$Trinity),"word","polarity" )]
+
+varpolar <- input$Trinity
+
+trinity_polar  %>% filter(!is.na(polarity)) %>% filter(!((!!sym(varpolar)))==0) %>% 
+  ggplot(aes(polarity))+
+  geom_bar(aes(fill=polarity))+
+  coord_flip()
+})
+```
+
+
+
+### Sentiment
+
+
+```{r}
+renderPlot({
+trinity_sentiment <- Word_by_title[c( as.character(input$Trinity),"word","sentiment" )]
+
+varsentiment <- input$Trinity
+
+trinity_sentiment  %>% filter(!is.na(sentiment))  %>% filter(!((!!sym(varsentiment)))==0) %>% 
+  ggplot(aes(sentiment))+
+  geom_bar(aes(fill=sentiment))+
+  coord_flip()
 })
 ```
 
